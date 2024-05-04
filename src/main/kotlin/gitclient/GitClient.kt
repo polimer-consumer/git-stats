@@ -11,10 +11,13 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.Json
 
 class GitClient {
-    private val token = "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"
+    private val token = "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"
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {
@@ -29,38 +32,41 @@ class GitClient {
         }
     }
 
-    suspend fun fetchCommits(owner: String, repo: String): List<CommitWithFiles> {
+    suspend fun fetchCommits(owner: String, repo: String): List<CommitWithFiles> = coroutineScope {
+        val semaphore = Semaphore(10)
+
         try {
             val fetchResponse: HttpResponse =
-                client.get("https://api.github.com/repos/$owner/$repo/commits?per_page=10000")
+                client.get("https://api.github.com/repos/$owner/$repo/commits?per_page=1000")
             if (!fetchResponse.status.isSuccess()) {
                 println("Failed to fetch commits: ${fetchResponse.status}")
-                return emptyList()
+                return@coroutineScope emptyList()
             }
 
             val commitSHAs: List<Commit> = fetchResponse.body()
 
-            val commits = commitSHAs.mapNotNull { sha ->
-                try {
-                    val detailedResponse: HttpResponse =
-                        client.get("https://api.github.com/repos/$owner/$repo/commits/${sha.sha}")
-                    if (detailedResponse.status.isSuccess()) {
-                        detailedResponse.body<CommitWithFiles>()
-                    } else {
-                        println("Failed to fetch detailed commit info for SHA ${sha.sha}: ${detailedResponse.status}")
-                        null
+            commitSHAs.map { sha ->
+                async(Dispatchers.IO) {
+                    semaphore.withPermit {
+                        try {
+                            val detailedResponse: HttpResponse =
+                                client.get("https://api.github.com/repos/$owner/$repo/commits/${sha.sha}")
+                            if (detailedResponse.status.isSuccess()) {
+                                detailedResponse.body<CommitWithFiles>()
+                            } else {
+                                println("Failed to fetch detailed commit info for SHA ${sha.sha}: ${detailedResponse.status}")
+                                null
+                            }
+                        } catch (e: Exception) {
+                            println("Error fetching detailed commit info for SHA ${sha.sha}: ${e.message}")
+                            null
+                        }
                     }
-                } catch (e: Exception) {
-                    println("Error fetching detailed commit info for SHA ${sha.sha}: ${e.message}")
-                    null
                 }
-            }
-
-            println("commits fetched")
-            return commits
+            }.awaitAll().filterNotNull()
         } catch (e: Exception) {
             println("Error fetching commits: ${e.message}")
-            return emptyList()
+            emptyList()
         }
     }
 
