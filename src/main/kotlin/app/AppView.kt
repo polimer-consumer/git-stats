@@ -16,7 +16,7 @@ class AppView : View("GitHub Commit Viewer") {
         label("Repository Name:")
         textfield(repo)
 
-        button("Fetch Commits") {
+        button("Fetch Commits and calculate pairs") {
             action {
                 runBlocking {
                     controller.fetchCommits(owner.value, repo.value)
@@ -24,7 +24,13 @@ class AppView : View("GitHub Commit Viewer") {
             }
         }
 
-        listview(controller.commitsList)
+        listview(controller.commitsList) {
+            prefHeight = 200.0
+        }
+        label("Most frequent pairs:")
+        listview(controller.developerPairsList) {
+            prefHeight = 200.0
+        }
     }
 
     override fun onDelete() {

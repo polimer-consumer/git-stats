@@ -27,7 +27,3 @@ class Styles : Stylesheet() {
         }
     }
 }
-
-fun main(args: Array<String>) {
-    launch<GitApp>(args)
-}
