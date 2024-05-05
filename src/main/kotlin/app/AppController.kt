@@ -17,8 +17,8 @@ class AppController : Controller() {
     private var commitsRawList = listOf<CommitWithFiles>()
     private val analysisViewModel: AnalysisViewModel by inject()
 
-    suspend fun fetchCommits(owner: String, repo: String) {
-        commitsRawList = gitClient.fetchCommits(owner, repo)
+    suspend fun fetchCommits(owner: String, repo: String, apiKey: String) {
+        commitsRawList = gitClient.fetchCommits(owner, repo, apiKey)
         val contributors = analyzeCommits(commitsRawList)
         val developerPairs = calculateDeveloperPairs(contributors)
 

@@ -14,9 +14,9 @@ class AppViewModel : ViewModel() {
 
     private val viewModelScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    fun fetchCommits(owner: String, repo: String) {
+    fun fetchCommits(owner: String, repo: String, apiKey: String) {
         viewModelScope.launch {
-            controller.fetchCommits(owner, repo)
+            controller.fetchCommits(owner, repo, apiKey)
             runLater {
                 commitsList.setAll(controller.commitsList)
                 developerPairsList.setAll(controller.developerPairsList)

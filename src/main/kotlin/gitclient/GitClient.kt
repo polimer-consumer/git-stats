@@ -17,7 +17,6 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.Json
 
 class GitClient {
-    private val token = "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"
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {
@@ -27,17 +26,20 @@ class GitClient {
         }
         defaultRequest {
             header(HttpHeaders.Accept, "application/vnd.github+json")
-            header(HttpHeaders.Authorization, "token $token")
             header(HttpHeaders.UserAgent, "ktor-client")
         }
     }
 
-    suspend fun fetchCommits(owner: String, repo: String): List<CommitWithFiles> = coroutineScope {
+    suspend fun fetchCommits(owner: String, repo: String, apiKey: String): List<CommitWithFiles> = coroutineScope {
         val semaphore = Semaphore(10)
 
         try {
             val fetchResponse: HttpResponse =
-                client.get("https://api.github.com/repos/$owner/$repo/commits?per_page=1000")
+                client.get("https://api.github.com/repos/$owner/$repo/commits?per_page=1000") {
+                    if (apiKey.isNotEmpty()) {
+                        header(HttpHeaders.Authorization, "token $apiKey")
+                    }
+                }
             if (!fetchResponse.status.isSuccess()) {
                 println("Failed to fetch commits: ${fetchResponse.status}")
                 return@coroutineScope emptyList()
@@ -50,7 +52,11 @@ class GitClient {
                     semaphore.withPermit {
                         try {
                             val detailedResponse: HttpResponse =
-                                client.get("https://api.github.com/repos/$owner/$repo/commits/${sha.sha}")
+                                client.get("https://api.github.com/repos/$owner/$repo/commits/${sha.sha}") {
+                                    if (apiKey.isNotEmpty()) {
+                                        header(HttpHeaders.Authorization, "token $apiKey")
+                                    }
+                                }
                             if (detailedResponse.status.isSuccess()) {
                                 detailedResponse.body<CommitWithFiles>()
                             } else {

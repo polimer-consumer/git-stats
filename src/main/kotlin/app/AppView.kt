@@ -8,6 +8,7 @@ class AppView : View("GitHub Commit Viewer") {
     private val model: AppViewModel by inject()
     private val owner = SimpleStringProperty()
     private val repo = SimpleStringProperty()
+    private val apiKey = SimpleStringProperty()
 
     override val root = tabpane {
         tab("Overview") {
@@ -18,9 +19,12 @@ class AppView : View("GitHub Commit Viewer") {
                 label("Repository Name:")
                 textfield(repo)
 
+                label("GitHub API key:")
+                textfield(apiKey)
+
                 button("Fetch Commits and calculate pairs") {
                     action {
-                        model.fetchCommits(owner.value, repo.value)
+                        model.fetchCommits(owner.value, repo.value, apiKey.value)
                     }
                 }
 
