@@ -15,5 +15,6 @@ java -jar build/libs/git-stats-1.0-SNAPSHOT.jar
 ```
 
 ## Important
-**API Key Configuration:** Please input GitHub API key to increase query rate limits.
+- **API Key Configuration:** Please input GitHub API key to increase query rate limits.
+- **Fetching commits takes time** (for big projects about 10 seconds, it is ok, just wait a bit ⏱)
 
