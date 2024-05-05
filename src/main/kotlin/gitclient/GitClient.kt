@@ -17,7 +17,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.Json
 
 class GitClient {
-    private val token = "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"
+    private val token = "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"
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json {

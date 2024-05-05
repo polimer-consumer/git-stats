@@ -1,21 +1,30 @@
 package com.polimerconsumer.app
 
+import com.polimerconsumer.app.models.AnalysisViewModel
 import com.polimerconsumer.gitclient.GitClient
 import com.polimerconsumer.gitclient.models.CommitWithFiles
 import javafx.collections.FXCollections.observableArrayList
+import javafx.collections.ObservableList
 import tornadofx.Controller
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class AppController : Controller() {
     private val gitClient = GitClient()
-    val commitsList = observableArrayList<String>()
-    val developerPairsList = observableArrayList<String>()
+    val commitsList: ObservableList<String> = observableArrayList()
+    val developerPairsList: ObservableList<String> = observableArrayList()
+    private var commitsRawList = listOf<CommitWithFiles>()
+    private val analysisViewModel: AnalysisViewModel by inject()
 
     suspend fun fetchCommits(owner: String, repo: String) {
-        val commits = gitClient.fetchCommits(owner, repo)
-        val contributors = analyzeCommits(commits)
+        commitsRawList = gitClient.fetchCommits(owner, repo)
+        val contributors = analyzeCommits(commitsRawList)
         val developerPairs = calculateDeveloperPairs(contributors)
+
         updateDeveloperPairsList(developerPairs)
-        updateCommitsList(commits)
+        updateCommitsList(commitsRawList)
+        analysisViewModel.updateData(analyzeTimeOfWeek(commitsRawList))
     }
 
     private fun updateCommitsList(commits: List<CommitWithFiles>) {
@@ -52,6 +61,13 @@ class AppController : Controller() {
         }
 
         return pairsCount
+    }
+
+    private fun analyzeTimeOfWeek(commits: List<CommitWithFiles> = commitsRawList): Map<DayOfWeek, Int> {
+        val formatter = DateTimeFormatter.ISO_DATE_TIME
+        return commits.groupBy {
+            LocalDate.parse(it.commit.author.date, formatter).dayOfWeek
+        }.mapValues { (_, value) -> value.size }
     }
 
     fun closeClient() = gitClient.close()

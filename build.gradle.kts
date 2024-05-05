@@ -35,3 +35,13 @@ kotlin {
 javafx {
     modules("javafx.controls", "javafx.fxml")
 }
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "com.polimerconsumer.MainKt"
+    }
+    configurations["compileClasspath"].forEach { file: File ->
+        from(zipTree(file.absoluteFile))
+    }
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}

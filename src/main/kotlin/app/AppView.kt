@@ -1,40 +1,46 @@
 package com.polimerconsumer.app
 
+import com.polimerconsumer.app.models.AppViewModel
 import javafx.beans.property.SimpleStringProperty
-import kotlinx.coroutines.*
 import tornadofx.*
 
 class AppView : View("GitHub Commit Viewer") {
-    private val controller: AppController by inject()
+    private val model: AppViewModel by inject()
     private val owner = SimpleStringProperty()
     private val repo = SimpleStringProperty()
 
-    override val root = vbox {
-        label("GitHub Repository Owner:")
-        textfield(owner)
+    override val root = tabpane {
+        tab("Overview") {
+            vbox {
+                label("GitHub Repository Owner:")
+                textfield(owner)
 
-        label("Repository Name:")
-        textfield(repo)
+                label("Repository Name:")
+                textfield(repo)
 
-        button("Fetch Commits and calculate pairs") {
-            action {
-                runBlocking {
-                    controller.fetchCommits(owner.value, repo.value)
+                button("Fetch Commits and calculate pairs") {
+                    action {
+                        model.fetchCommits(owner.value, repo.value)
+                    }
+                }
+
+                listview(model.commitsList) {
+                    prefHeight = 200.0
+                }
+                label("Most frequent pairs:")
+                listview(model.developerPairsList) {
+                    prefHeight = 200.0
                 }
             }
         }
 
-        listview(controller.commitsList) {
-            prefHeight = 200.0
-        }
-        label("Most frequent pairs:")
-        listview(controller.developerPairsList) {
-            prefHeight = 200.0
+        tab("Weekday analysis") {
+            this += find(AnalysisView::class)
         }
     }
 
     override fun onDelete() {
-        controller.closeClient()
+        model.closeClient()
         super.onDelete()
     }
 }
